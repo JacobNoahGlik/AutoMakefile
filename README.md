@@ -1,5 +1,6 @@
 # AutoMakefile
 Creates makefile for any cpp directory
+##### Note: does not work with external librarys yet
 
 <br>
 
