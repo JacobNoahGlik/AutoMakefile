@@ -158,6 +158,8 @@ class fancy_file:
         cpp = None
         if (d+'.hpp') in __FILES__:
             hpp = d+'.hpp'
+        elif (d+'.h') in __FILES__:
+            hpp = d+'.h'
         if (d+'.cpp') in __FILES__:
             cpp = d+'.cpp'
         return cpp, hpp
@@ -173,7 +175,7 @@ def _get_dependency_objects(file, depth=0, found=[], hide_missing_files_tree=Fal
     udeps = []
     for dep in deps:
         udep = _object(dep)
-        if udep not in udeps:
+        if udep and udep not in udeps:
             udeps.append(udep)
     # print(f"Found: {udeps}\n\n")
     return udeps
@@ -182,7 +184,10 @@ def _get_dependency_objects(file, depth=0, found=[], hide_missing_files_tree=Fal
 def _object(file):
     if os.path.exists(file.split('.')[0]+'.cpp'):
         return file.split('.')[0]+'.o'
-    return file.split('.')[0]+'.hpp'
+    # return file.split('.')[0]+'.hpp'
+    if os.path.exists(file):
+        return file
+    return None
 
 
 def _deep_dependency_search_recursive(file, tree, depth=0, found=[]): # returns total not unique
@@ -214,6 +219,8 @@ def add_extentions(deps):
         other = dep.split('.')[0] + '.cpp'
         if dep.endswith('.cpp'):
             other = dep.split('.')[0] + '.hpp'
+            if not os.path.exists(other):
+                other = dep.split('.')[0] + '.h'
         if other not in out:
             out.append(other)
     return out
