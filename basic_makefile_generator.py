@@ -172,11 +172,17 @@ def _get_dependency_objects(file, depth=0, found=[], hide_missing_files_tree=Fal
     deps = _deep_dependency_search_recursive(file, '', depth=depth, found=found)
     udeps = []
     for dep in deps:
-        udep = dep.split('.')[0]+'.o'
+        udep = _object(dep)
         if udep not in udeps:
             udeps.append(udep)
     # print(f"Found: {udeps}\n\n")
     return udeps
+
+
+def _object(file):
+    if os.path.exists(file.split('.')[0]+'.cpp'):
+        return file.split('.')[0]+'.o'
+    return file.split('.')[0]+'.hpp'
 
 
 def _deep_dependency_search_recursive(file, tree, depth=0, found=[]): # returns total not unique
