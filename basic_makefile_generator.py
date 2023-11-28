@@ -110,9 +110,11 @@ def getH_File(baseName):
 
 def makefile_builder(fileTable, mName):
   c_only_files = read_file_except()
+  flags = '$(CXX) $(CPPFLAGS)'
   content = "CXX = g++\nCPPFLAGS = -Wall -Wextra"
   if c_only_files:
     content = "CC = gcc\nCFLAGS = -g -Wall"
+    flags = '$(CC) $(CFLAGS)'
   total_objs = ''
   rules = {}
   oRules = ''
@@ -120,15 +122,14 @@ def makefile_builder(fileTable, mName):
   for filename, fileObjects in fileTable.items():
     base_name, ext = os.path.splitext(filename)
     total_objs += f"\n{base_name.upper()}_DEPS = {' '.join(fileObjects)}"
-    rule = f"{base_name}: $({base_name.upper()}_DEPS)\n\t$(CXX) $(CPPFLAGS) $^ -o $@\n"
+    rule = f"{base_name}: $({base_name.upper()}_DEPS)\n\t{flags} $^ -o $@\n"
     rules[base_name] = rule
     oRules += addObjectRule(base_name)
 
   if len(rules.keys()) == 0:
     printy(
         'ERROR: No targets found. (no files that end in .c or .cpp have a main function)',
-        'red'
-    )
+        'red')
     exit(1)
 
   targets = "TARGETS = " + ' '.join(rules.keys())
@@ -201,8 +202,8 @@ def grab(funny_dict):
   return toString(funny_dict, ' ').replace(' ', ', ')
 
 
-def safe_write(contnet, filename): # -> bool:
-  while os.path.exists(filename) or has_visible_chars(open(filename).read()):
+def safe_write(contnet, filename):  # -> bool:
+  while os.path.exists(filename) and has_visible_chars(open(filename).read()):
     i = input(f"'{filename}' already exists, overwrite? (y/n) ").lower()
     if (i in ['y', 'yes', 'ye', 'sure', 'yeah', 'ya', 'ok']):
       break
@@ -248,12 +249,14 @@ class fancy_file:
     #     # pass
 
   def _includes_exist(self):
-    err = False  
+    err = False
     for i in self.includes:
       if not os.path.exists(i):
-        get_line = '#include \"'+i+'\"'
-        printy(f"ERROR: a file ('{i}') which was explicitly included in {self.filename} could not be found. '{get_line}' on line {self._get_line_no(get_line)} of {self.filename}.", 'red')
-        err=True
+        get_line = '#include \"' + i + '\"'
+        printy(
+            f"ERROR: a file ('{i}') which was explicitly included in {self.filename} could not be found. '{get_line}' on line {self._get_line_no(get_line)} of {self.filename}.",
+            'red')
+        err = True
     if err:
       exit(1)
 
@@ -261,7 +264,7 @@ class fancy_file:
     for line_number, line in enumerate(self.lines):
       if string in line:
         return line_number + 1
-    
+
   def _get_type(self):
     fPlus = self.filename.split('.')
     if len(fPlus) == 1:
@@ -334,6 +337,8 @@ def _get_dependency_objects(file,
 def _object(file):
   if os.path.exists(file.split('.')[0] + '.cpp'):
     return file.split('.')[0] + '.o'
+  if os.path.exists(file.split('.')[0] + '.c'):
+    return file.split('.')[0] + '.o'
   # return file.split('.')[0]+'.hpp'
   if os.path.exists(file):
     return file
@@ -396,7 +401,7 @@ def main():
   global __DIR__
   if len(sys.argv) > 1:
     __DIR__ = sys.argv[1]
-  files = get_files_with(extention='.cpp', force=True)
+  files = get_files_with(extention=('.cpp', 'c'), force=True)
   flTable = {}
   for file in files:
     if file.has_main:
