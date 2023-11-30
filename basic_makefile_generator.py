@@ -69,7 +69,7 @@ def get_files():
     return os.listdir(__DIR__)
 
 
-def get_files_with(extention=('.c', '.h'), dir='', force=False):
+def get_files_with(extention=('.c', '.h'), dir='', force=False, _warn=False):
   global __FILES__
   if force:
     global __DIR__
@@ -79,11 +79,11 @@ def get_files_with(extention=('.c', '.h'), dir='', force=False):
     package = []
     for fname in temp:
       if fname.endswith(extention):
-        package.append(fancy_file(fname))
+        package.append(fancy_file(fname, _warn=_warn))
     return package
     # return [fancy_file(fname, start=True) for fname in temp if fname.endswith(extention)]
   return [
-      fancy_file(fname) for fname in __FILES__ if fname.endswith(extention)
+      fancy_file(fname, _warn=_warn) for fname in __FILES__ if fname.endswith(extention)
   ]
 
 
@@ -226,7 +226,7 @@ def safe_write(contnet, filename):  # -> bool:
 
 class fancy_file:
 
-  def __init__(self, filename):
+  def __init__(self, filename, _warn=False):
     # , ignore=[], start=False, depth=0
     # if depth > 5:
     #     print("ERROR: Maximum recursion depth reached.")
@@ -242,7 +242,7 @@ class fancy_file:
     self.dObjects = ['None']
     if self.has_main:
       self._includes_exist()
-      self.dObjects = _get_dependency_objects(self.filename)
+      self.dObjects = _get_dependency_objects(self.filename, _warn=_warn)
 
     # if not start or self.has_main:
     #     self._deep_dependency_search(ignore)
@@ -322,9 +322,10 @@ def deep_copy(arr: list):
 def _get_dependency_objects(file,
                             depth=0,
                             found=[],
-                            hide_missing_files_tree=False):
+                            hide_missing_files_tree=False,
+                           _warn=False):
   # print('\nSearching for dependency objects in file: ' + file)
-  deps = _deep_dependency_search_recursive(file, '', depth=depth, found=found)
+  deps = _deep_dependency_search_recursive(file, '', depth=depth, found=found, _warn=_warn)
   udeps = []
   for dep in deps:
     udep = _object(dep)
@@ -348,11 +349,12 @@ def _object(file):
 def _deep_dependency_search_recursive(file,
                                       tree,
                                       depth=0,
-                                      found=[]):  # returns total not unique
+                                      found=[],
+                                      _warn=False):  # returns total not unique
   # print(f'\t> DDSR({file=}, {depth=}, {found=})\n')
   tree += f'{file}->'
   found += [file]
-  if not os.path.exists(file):
+  if not os.path.exists(file) and _warn:
     # print()
     printy(
         f'WARNING: Could not find file: {file}, following path: {tree[:-2]}',
@@ -398,10 +400,11 @@ def __read_includes(file, lines):  # , ignore
 
 
 def main():
+  warn = False
   global __DIR__
   if len(sys.argv) > 1:
     __DIR__ = sys.argv[1]
-  files = get_files_with(extention=('.cpp', 'c'), force=True)
+  files = get_files_with(extention=('.cpp', 'c'), force=True, _warn=warn)
   flTable = {}
   for file in files:
     if file.has_main:
