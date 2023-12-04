@@ -354,11 +354,13 @@ def _deep_dependency_search_recursive(file,
   # print(f'\t> DDSR({file=}, {depth=}, {found=})\n')
   tree += f'{file}->'
   found += [file]
-  if not os.path.exists(file) and _warn:
+  if not os.path.exists(file):
     # print()
-    printy(
-        f'WARNING: Could not find file: {file}, following path: {tree[:-2]}',
-        'grey')
+    if _warn:
+        printy(
+            f'WARNING: Could not find file: {file}, following path: {tree[:-2]}',
+            'grey'
+        )
     # if input("> Continue? (y/n) ").lower() == 'y':
     return found
     # exit(1)
